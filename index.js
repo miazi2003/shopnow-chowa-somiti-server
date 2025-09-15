@@ -2,7 +2,7 @@ const express = require("express")
 const app = express()
 
 const cors = require("cors")
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 app.use(cors())
@@ -11,7 +11,7 @@ app.use(express.json())
 
 
 
-
+const uri = process.env.MONGODB_URI 
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -21,17 +21,76 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
-
+    
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+
+ const database = client.db("somitiDB");
+ const usersCollection = database.collection("users");
+ const depositCollection = database.collection("deposit");
+
+// users data api
+ app.get("/users",  async(req,res)=>{
+    const result = await usersCollection.find().toArray()
+    res.send(result)
+ })
+
+
+ app.post("/users", async(req,res)=>{
+    const userData = req.body;
+
+    const result = await usersCollection.insertOne(userData);
+    res.send(result)
+ })
+
+
+ //deposit data
+app.post("/user-deposit" , async(req,res)=>{
+  const depositData = req.body;
+
+  const result = await depositCollection.insertOne(depositData)
+  res.send(result)
+})
+
+app.get("/user-deposit" , async(req,res)=>{
+  const result = await depositCollection.find().toArray()
+  res.send(result)
+})
+
+
+
+
+
+
+// Update deposit by ID
+app.put("/user-deposit/:id", async (req, res) => {
+  const { id } = req.params;
+  const { amount, date } = req.body;
+  
+  try {
+    const result = await depositCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { amount, date } }
+    );
+    res.send(result);
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
+});
+
+
+
+
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
   }
 }
 run().catch(console.dir);
