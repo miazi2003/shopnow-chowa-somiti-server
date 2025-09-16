@@ -81,10 +81,36 @@ app.put("/user-deposit/:id", async (req, res) => {
   }
 });
 
+ 
+ app.get('/deposits', async (req, res) => {
+      const { email } = req.query;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+
+      try {
+        const deposits = await depositCollection.find({ email }).toArray();
+        res.json(deposits);
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch deposits' });
+      }
+    });
 
 
-
-
+    // app.delete("/deposits", async (req, res) => {
+    //   try {
+    //     const result = await depositCollection.deleteMany({});
+    //     res.status(200).json({
+    //       message: "All deposits deleted successfully",
+    //       deletedCount: result.deletedCount,
+    //     });
+    //   } catch (err) {
+    //     console.error(err);
+    //     res.status(500).json({ message: "Failed to delete deposits" });
+    //   }
+    // });
 
 
     // Send a ping to confirm a successful connection
