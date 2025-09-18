@@ -1,17 +1,20 @@
-const express = require("express")
-const app = express()
+const express = require("express");
+const app = express();
 
-const cors = require("cors")
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const cors = require("cors");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
-app.use(cors())
-app.use(express.json())
+app.use(
+  cors({origin : "http://localhost:5173",
+    credentials: true,
+  })
+);
+app.use(express.json());
 
 
 
-
-const uri = process.env.MONGODB_URI 
+const uri = process.env.MONGODB_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -19,74 +22,93 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
-    
+
+
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-
- const database = client.db("somitiDB");
- const usersCollection = database.collection("users");
- const depositCollection = database.collection("deposit");
-
-// users data api
- app.get("/users",  async(req,res)=>{
-    const result = await usersCollection.find().toArray()
-    res.send(result)
- })
-
-
- app.post("/users", async(req,res)=>{
-    const userData = req.body;
-
-    const result = await usersCollection.insertOne(userData);
-    res.send(result)
- })
-
-
- //deposit data
-app.post("/user-deposit" , async(req,res)=>{
-  const depositData = req.body;
-
-  const result = await depositCollection.insertOne(depositData)
-  res.send(result)
-})
-
-app.get("/user-deposit" , async(req,res)=>{
-  const result = await depositCollection.find().toArray()
-  res.send(result)
-})
+    const database = client.db("somitiDB");
+    const usersCollection = database.collection("users");
+    const depositCollection = database.collection("deposit");
 
 
 
+    // users data api
+    app.get("/users",     async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
 
 
+app.get("/users-filter",    async (req, res) => {
+  const email = req.query.email;
+  if (!email) return res.status(400).send({ message: "Email is required" });
 
-// Update deposit by ID
-app.put("/user-deposit/:id", async (req, res) => {
-  const { id } = req.params;
-  const { amount, date } = req.body;
-  
   try {
-    const result = await depositCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { amount, date } }
-    );
-    res.send(result);
+    const user = await usersCollection.findOne({ email });
+    if (!user) return res.status(404).send({ message: "User not found" });
+    res.send(user); // ✅ এই ইউজারের ডাটা
   } catch (err) {
-    res.status(500).send({ error: err.message });
+    res.status(500).send({ message: "Failed to fetch user" });
   }
 });
 
- 
- app.get('/deposits', async (req, res) => {
+
+
+    app.post("/users",   async (req, res) => {
+      const userData = req.body;
+
+      const result = await usersCollection.insertOne(userData);
+      res.send(result);
+    });
+
+
+
+    //deposit data
+    app.post("/user-deposit",       async (req, res) => {
+      const depositData = req.body;
+
+      const result = await depositCollection.insertOne(depositData);
+      res.send(result);
+    });
+
+
+
+    app.get("/user-deposit",     async (req, res) => {
+      const result = await depositCollection.find().toArray();
+      res.send(result);
+    });
+
+
+
+    // Update deposit by ID
+    app.put("/user-deposit/:id",       async (req, res) => {
+      const { id } = req.params;
+      const { amount, date } = req.body;
+
+      try {
+        const result = await depositCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { amount, date } }
+        );
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
+    });
+
+
+
+    app.get("/deposits",     async (req, res) => {
       const { email } = req.query;
 
       if (!email) {
-        return res.status(400).json({ error: 'Email is required' });
+        return res.status(400).json({ error: "Email is required" });
       }
 
       try {
@@ -94,10 +116,9 @@ app.put("/user-deposit/:id", async (req, res) => {
         res.json(deposits);
       } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Failed to fetch deposits' });
+        res.status(500).json({ error: "Failed to fetch deposits" });
       }
     });
-
 
     // app.delete("/deposits", async (req, res) => {
     //   try {
@@ -115,26 +136,19 @@ app.put("/user-deposit/:id", async (req, res) => {
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
   }
 }
 run().catch(console.dir);
 
+app.get("/", async (req, res) => {
+  console.log("server running");
+  res.send("server is cooking now shopnow chowa");
+});
 
-
-
-
-
-
-
-
-
-app.get("/" ,  async (req,res)=> {
-    console.log("server running")
-res.send("server is cooking now shopnow chowa")
-})
-
-app.listen(port , ()=>{
-    console.log("port running on" , port)
-})
+app.listen(port, () => {
+  console.log("port running on", port);
+});
