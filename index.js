@@ -146,7 +146,7 @@ run().catch(console.dir);
 
 app.get("/", async (req, res) => {
   console.log("server running");
-  res.send("server is cooking now shopnow chowa");
+  res.send("server is cooking now shopnow chowa doneeeee");
 });
 
 app.listen(port, () => {
