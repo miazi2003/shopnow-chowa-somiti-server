@@ -11,8 +11,8 @@ const port = process.env.PORT || 5000;
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "https://amazing-cannoli-b3379f.netlify.app",
+      "http://localhost:5173/",
+      "https://amazing-cannoli-b3379f.netlify.app/",
     ],
     credentials: true,
   })
